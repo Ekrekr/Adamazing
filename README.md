@@ -14,3 +14,6 @@ A maze generator written in Ada.
 
 `make run`.
 
+### Example
+
+![Example maze](example.png)

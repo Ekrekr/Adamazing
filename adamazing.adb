@@ -10,4 +10,5 @@ begin
    -- Making the size an odd number improves impearance.
    Size := Integer'Value(Get_Line) * 10 + 1;
    Maze (Size);
+   Put_Line("");
 end Adamazing;
