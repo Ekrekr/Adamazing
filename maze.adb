@@ -11,11 +11,12 @@ with Ada.Numerics.Discrete_Random;
 procedure Maze (Size : Integer) is
    -- A grid is a 2d array of cells. A cell can either be Fresh (not
    -- inspected), Front (Inspected but not set), Clear (inspected and
-   -- traversable), Blocked (inspected and not traversable), Start or Finish.
-   type Cell is (Fresh, Front, Clear, Blocked, Start, Finish);
+   -- traversable), Blocked (inspected and not traversable), Start, Finish, or
+   -- Player (location).
+   type Cell is (Fresh, Front, Clear, Blocked, Start, Finish, Player);
    type Grid is array(NATURAL range 1..Size, NATURAL range 1..Size) of Cell;
 
-   -- Coordinates are a vector of them are used to to keep track of the
+   -- Coordinates are a vector of cells used to to keep track of the
    -- frontier.
    type Coord is array(NATURAL range 1..2) of NATURAL;
    package Coord_Vector is new Ada.Containers.Vectors
@@ -25,6 +26,7 @@ procedure Maze (Size : Integer) is
    Start_Coord : Coord := (2, 2);
    End_Coord : Coord := (Size-1, Size-1);
    Maze_Grid : Grid;
+   Player_Coord : Coord := (2, 2);
 
    -- Frontier cells are any uninspected cell adjacent to an inspected cell.
    Frontier : Coord_Vector.Vector;
@@ -54,6 +56,8 @@ procedure Maze (Size : Integer) is
          Put ("S ");
       elsif C = Finish then
          Put ("F ");
+      elsif C = Player then
+         Put ("+ ");
       else
          Put ("  ");
       end if;
@@ -163,11 +167,49 @@ procedure Maze (Size : Integer) is
       end loop;
       Maze_Grid (Start_Coord (1), Start_Coord (2)) := Start;
       Maze_Grid (End_Coord (1), End_Coord (2)) := Finish;
+      Maze_Grid (Player_Coord (1), Player_Coord (2)) := Player;
    end Find_Route;
 
+   -- Move the player given an input.
+   procedure Move_Player (Char : Character) is
+      function Space_Free (Key : Character; C : Coord; Y_Dir : Integer := 0; X_Dir : Integer := 0) Return Boolean is
+      Begin
+         Y_Dir = Player_Coord (1) + Y_Dir
+         X_Dir = Player_Coord (1) + X_Dir
+         Return Char = Key and Maze_Grid (Y, X) /= Blocked
+      End Space_Free;
+   begin
+      Maze_Grid (Player_Coord (1), Player_Coord (2)) := Clear;
+      if Space_Free('a', Player_Coord, X_Dir => 1) then
+         Player_Coord (2) := Player_Coord (2) - 1;
+      elsif Space_Free('b', Player_Coord, X_Dir => -1) then
+         Player_Coord (2) := Player_Coord (2) + 1;
+      elsif Space_Free('w', Player_Coord, Y_Dir => 1) then
+         Player_Coord (1) := Player_Coord (1) - 1;
+      elsif Space_Free('s', Player_Coord, Y_Dir => -1) then
+         Player_Coord (1) := Player_Coord (1) + 1;
+      end if;
+      Maze_Grid (Player_Coord (1), Player_Coord (2)) := Player;
+   end Move_Player;
+
+   -- Start the game loop.
+   procedure Play_Game is
+   Char : Character;
+   begin
+      clear_maze;
+      Set_Border;
+      Find_Route;
+      Put_Maze;
+      while Player_Coord (1) /= End_Coord (1) and Player_Coord (2) /= End_Coord (2) loop
+         Get_Immediate (Char);
+         Move_Player(Char);
+         -- Put(ASCII.ESC & "[2J"); -- Clears the screen.
+         Put_Maze;
+      end loop;
+   end Play_Game;
+
 begin
-   clear_maze;
-   Set_Border;
-   Find_Route;
-   Put_Maze;
+   Put ("Adamazing:");
+   Play_Game;
+   Put ("You won! Congratulations!");
 end Maze;
